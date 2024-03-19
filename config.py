@@ -1,7 +1,10 @@
 from decouple import config
 from aiogram import Dispatcher, Bot
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-TOKEN = config('TOKEN')
-MEDIA_DEST = config('MEDIA_DEST', default='media')
+storage = MemoryStorage()
+TOKEN = config("TOKEN")
+MEDIA_DESTINATION = config("MEDIA_DESTINATION")
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot=bot)
+dp = Dispatcher(bot=bot, storage=storage)
+BOT_TOKEN = '6867957153:AAHzZ0ZA_ILQW9Y0ar74uKcLfX9SDoiYCjQ'

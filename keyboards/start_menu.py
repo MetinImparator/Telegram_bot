@@ -4,21 +4,17 @@ from aiogram.types import (
 )
 
 
-async def start_menu_key():
+async def start_menu_keyboard():
     markup = InlineKeyboardMarkup()
 
-    questionnaire_button = InlineKeyboardButton('Какой ваш любимый цвет?', callback_data='star_questionnaire')
-
+    questionnaire_button = InlineKeyboardButton(
+        "Questionnaire 🗒️",
+        callback_data="start_questionnaire"
+    )
+    registration_button = InlineKeyboardButton(
+        "Registration 🔥",
+        callback_data="registration"
+    )
     markup.add(questionnaire_button)
-
+    markup.add(registration_button)
     return markup
-
-
-async def start_group_key():
-    group_markup = InlineKeyboardMarkup()
-
-    group_button = InlineKeyboardButton('проверка таблиц банов', callback_data='ban_check')
-
-    group_markup.add(group_button)
-
-    return group_markup
