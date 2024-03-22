@@ -1,15 +1,13 @@
 START_GROUP_MSG = 'Hello {user}\n' \
-            'Добро пожаловать !'
+            'Welcome to group'
 
 START_MSG = 'Hello {user}\n'
 
-START_MENU_TEXT = 'Hello {user}\n' \
-                  'Im 39-1 bot,\n' \
-                  'I have Questionnaire u can press button down below\n' \
-                  'I can filter bad words in group'
 
-PROFILE_TEXT = 'Nickname: {nickname}\n' \
-               'Bio: {bio}\n' \
-               'Age: {age}\n' \
-               'Married: {married}\n' \
-               'Gender: {gender}\n'
+PROFILE_MSG = 'Nickname {nickname}\n'\
+              'Hobby {hobby}\n' \
+              'Age {age}\n' \
+              'Married {married}\n' \
+              'City {city}\n' \
+              'Email {email_address}\n' \
+              'Floor {floor}\n'
