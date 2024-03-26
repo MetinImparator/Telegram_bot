@@ -1,216 +1,155 @@
-import sqlite3
 from aiogram import types, Dispatcher
-from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
-from config import bot, MEDIA_DESTINATION
-from database import bot_db
-import const
+from aiogram.dispatcher.filters.state import State, StatesGroup
+
+from config import bot, media
+from const import Userinfo
+from database import db
 
 
-class RegistrationStates(StatesGroup):
-    nickname = State()
-    hobby = State()
+class Registration(StatesGroup):
+    name = State()
+    biography = State()
     age = State()
-    married = State()
-    city = State()
-    email_address = State()
-    floor = State()
+    zodiac_sign = State()
+    gender = State()
+    best_color = State()
     photo = State()
 
 
-async def registration_start(call: types.CallbackQuery):
-    await bot.send_message(
-        chat_id=call.from_user.id,
-        text='Please write your nickname!!!'
+async def register_begin(call: types.CallbackQuery):
+    datab = db.Database()
+    ids = datab.select_id_info(
+        tg=call.from_user.id
     )
-    await RegistrationStates.nickname.set()
-
-
-async def load_nickname(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['nickname'] = message.text
-        print(data)
-
-    await bot.send_message(
-        chat_id=message.from_user.id,
-        text="what's your hobby"
-    )
-    await RegistrationStates.next()
-
-
-async def load_hobby(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['hobby'] = message.text
-        print(data)
-
-    await bot.send_message(
-        chat_id=message.from_user.id,
-        text='How old are you?\n'
-             'Just write the numbers.\n'
-             "If you don't want to give your age, you can skip it by typing in - "
-    )
-    await RegistrationStates.next()
-
-
-async def load_age(message: types.Message, state: FSMContext):
-    if message.text == '-':
-        pass
+    if ids:
+        await bot.send_message(
+            chat_id=call.from_user.id,
+            text='U have already registered✅')
     else:
-        try:
-            int(message.text)
-        except ValueError:
-            await bot.send_message(
-                chat_id=message.from_user.id,
-                text='Only NUMBERS\n\n'
-                     'Registration failed\n'
-                     'Restart process'
-            )
-            await state.finish()
-            return
+        await bot.send_message(
+            chat_id=call.from_user.id,
+            text='Write ur name'
+        )
+        await Registration.name.set()
 
+
+async def load_name(m: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['age'] = message.text
-        print(data)
+        data["name"] = m.text
+    await bot.send_message(
+        chat_id=m.from_user.id,
+        text='write ur bio'
+    )
+    await Registration.next()
+
+
+async def load_bio(m: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data["bio"] = m.text
 
     await bot.send_message(
-        chat_id=message.from_user.id,
-        text="marital status (Yes / No)\n"
-             "If you don't want to give your status, you can skip it by typing in - "
+        chat_id=m.from_user.id,
+        text='How old are u?'
     )
-    await RegistrationStates.next()
+    await Registration.next()
 
 
-async def load_married(message: types.Message, state: FSMContext):
+async def load_age(m: types.Message, state: FSMContext):
+    if m.text.isdigit():
+        async with state.proxy() as data:
+            data["age"] = m.text
+        await bot.send_message(
+            chat_id=m.from_user.id,
+            text='What is ur zodiac sign?'
+        )
+        await Registration.next()
+    else:
+        await bot.send_message(
+            chat_id=m.from_user.id,
+            text='U should have written only numbers.\n'
+                 'U must restart ur registration.'
+        )
+        await state.finish()
+
+
+async def load_zodiac(m: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['married'] = message.text
-        print(data)
-
+        data["zodiac"] = m.text
     await bot.send_message(
-        chat_id=message.from_user.id,
-        text='What city are you from?\n'
+        chat_id=m.from_user.id,
+        text='What is ur gender?'
     )
-    await RegistrationStates.next()
+    await Registration.next()
 
 
-async def load_cty(message: types.Message, state: FSMContext):
+async def load_gender(m: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['city'] = message.text
-        print(data)
-
+        data["gender"] = m.text
     await bot.send_message(
-        chat_id=message.from_user.id,
-        text='email_address?'
+        chat_id=m.from_user.id,
+        text='What is ur favorite color?'
     )
-    await RegistrationStates.next()
+    await Registration.next()
 
 
-async def load_email_address(message: types.Message, state: FSMContext):
+async def load_color(m: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['email_address'] = message.text
-        print(data)
-
+        data["color"] = m.text
     await bot.send_message(
-        chat_id=message.from_user.id,
-        text='Floor?\n'
-             'male/female or -'
-
+        chat_id=m.from_user.id,
+        text='Send me ur photo\n'
+             'it must be default photo.'
     )
-    await RegistrationStates.next()
+    await Registration.next()
 
 
-async def load_floor(message: types.Message, state: FSMContext):
+async def load_photo(m: types.Message, state: FSMContext):
+    path = await m.photo[-1].download(
+        destination_dir=media
+    )
+    datab = db.Database()
+    row = datab.select_id_info(
+        tg=m.from_user.id
+    )
+
     async with state.proxy() as data:
-        data['floor'] = message.text
-        print(data)
-
-    await bot.send_message(
-        chat_id=message.from_user.id,
-        text='Upload a photo'
-
-    )
-    await RegistrationStates.next()
-
-
-async def load_photo(message: types.Message, state: FSMContext):
-    db = bot_db.Database()
-    path = await message.photo[-1].download(
-        destination_dir=MEDIA_DESTINATION
-    )
-    async with state.proxy() as data:
-        db.insert_profile(
-            telegram_id=message.from_user.id,
-            nickname=data['nickname'],
-            hobby=data['hobby'],
-            age=data['age'],
-            married=data['married'],
-            city=data['city'],
-            email_address=data['email_address'],
-            floor=data['floor'],
+        datab.insert_info(
+            tg=m.from_user.id,
+            name=data["name"],
+            bio=data["bio"],
+            age=data["age"],
+            zodiac=data["zodiac"],
+            gender=data["gender"],
+            color=data["color"],
             photo=path.name
         )
-        with open(path.name, 'rb') as photo:
+        with open(path.name, "rb") as photo:
             await bot.send_photo(
-                chat_id=message.from_user.id,
+                chat_id=m.from_user.id,
                 photo=photo,
-                caption=const.PROFILE_MSG.format(
-                    nickname=data['nickname'],
-                    hobby=data['hobby'],
+                caption=Userinfo.format(
+                    name=data['name'],
+                    bio=data['bio'],
                     age=data['age'],
-                    married=data['married'],
-                    city=data['city'],
-                    email_address=data['email_address'],
-                    floor=data['floor']
+                    z=data['zodiac'],
+                    gender=data['gender'],
+                    bestcolor=data['color']
                 )
             )
     await bot.send_message(
-        chat_id=message.from_user.id,
-        text=f'You have successfully Registered 🎆'
+        chat_id=m.from_user.id,
+        text='U have successfully registered🎉🎊'
     )
     await state.finish()
 
 
-def register_handler(dp: Dispatcher):
-    dp.register_callback_query_handler(
-        registration_start,
-        lambda call: call.data == 'registration'
-    )
-    dp.register_message_handler(
-        load_nickname,
-        state=RegistrationStates.nickname,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_hobby,
-        state=RegistrationStates.hobby,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_age,
-        state=RegistrationStates.age,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_married,
-        state=RegistrationStates.married,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_cty,
-        state=RegistrationStates.city,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_email_address,
-        state=RegistrationStates.email_address,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_floor,
-        state=RegistrationStates.floor,
-        content_types=['text']
-    )
-    dp.register_message_handler(
-        load_photo,
-        state=RegistrationStates.photo,
-        content_types=types.ContentTypes.PHOTO
-    )
+def register_reg_handler(dp: Dispatcher):
+    dp.register_callback_query_handler(register_begin, lambda call: call.data == 'reg')
+    dp.register_message_handler(load_name, state=Registration.name, content_types=["text"])
+    dp.register_message_handler(load_bio, state=Registration.biography, content_types=["text"])
+    dp.register_message_handler(load_age, state=Registration.age, content_types=["text"])
+    dp.register_message_handler(load_zodiac, state=Registration.zodiac_sign, content_types=["text"])
+    dp.register_message_handler(load_gender, state=Registration.gender, content_types=["text"])
+    dp.register_message_handler(load_color, state=Registration.best_color, content_types=["text"])
+    dp.register_message_handler(load_photo, state=Registration.photo, content_types=types.ContentTypes.PHOTO)
